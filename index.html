@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SAMAS | Member Verification</title>
+<style>
+:root{--navy:#102b4e;--gold:#c9a34a;--bg:#f3f6fa;--ink:#172536}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:system-ui,"Noto Sans Bengali",sans-serif;color:var(--ink)}
+header{background:var(--navy);color:#fff;padding:26px 16px;text-align:center;border-bottom:5px solid var(--gold)}
+header h1{margin:0;font-size:30px;letter-spacing:2px}header p{margin:6px 0 0;color:#e5edf7}
+main{max-width:720px;margin:28px auto;padding:0 14px}.panel{background:#fff;border-radius:16px;padding:22px;box-shadow:0 8px 28px #122b4e12}
+h2{margin:0 0 8px;color:var(--navy)}.muted{color:#64748b;font-size:14px}
+.search{display:flex;gap:8px;margin:18px 0}.search input{min-width:0;flex:1;padding:13px;border:1px solid #cbd5e1;border-radius:9px;font-size:16px}
+button{background:var(--navy);color:white;border:0;border-radius:9px;padding:0 18px;font-size:15px;cursor:pointer}
+.result{margin-top:18px;border:1px solid #dbe3ec;border-radius:12px;padding:18px;display:none}
+.status{display:inline-block;padding:5px 11px;border-radius:30px;font-size:13px;font-weight:700}
+.active{background:#dcfce7;color:#166534}.inactive{background:#fee2e2;color:#991b1b}
+dl{display:grid;grid-template-columns:145px 1fr;gap:10px;margin:18px 0 0}dt{color:#64748b}dd{margin:0;font-weight:600;overflow-wrap:anywhere}
+footer{text-align:center;color:#64748b;font-size:12px;padding:24px}
+@media(max-width:480px){.search{flex-direction:column}.search button{padding:13px}dl{grid-template-columns:1fr;gap:3px}dd{margin-bottom:10px}}
+</style>
+</head>
+<body>
+<header><h1>SAMAS</h1><p>সদস্য পরিচয় যাচাই | Member Verification</p></header>
+<main><section class="panel">
+<h2>সদস্য যাচাই করুন</h2>
+<p class="muted">সদস্যের কার্ডে থাকা Member ID লিখুন অথবা QR Code স্ক্যান করে এই পেজে আসুন।</p>
+<form class="search" id="form"><input id="memberId" placeholder="যেমন: SAMAS-0001" autocomplete="off" required><button type="submit">যাচাই করুন</button></form>
+<div id="result" class="result" aria-live="polite"></div>
+<p class="muted">এই পেজে কেবল সংস্থার অনুমোদিত ও প্রকাশের জন্য নির্ধারিত সদস্য-তথ্য দেখানো উচিত।</p>
+</section></main>
+<footer>© SAMAS — Official Member Verification</footer>
+<script>
+let members = {};
+fetch('./data/members.json').then(r=>{if(!r.ok)throw Error();return r.json()})
+.then(data=>members=data).catch(()=>{members={};});
+const params=new URLSearchParams(location.search);
+const fromQR=params.get('id');
+const input=document.getElementById('memberId'), result=document.getElementById('result');
+function verify(id){
+ const m=members[id.trim().toUpperCase()];
+ result.style.display='block';
+ if(!m){result.innerHTML='<span class="status inactive">যাচাই করা যায়নি</span><h3>সদস্যের তথ্য পাওয়া যায়নি</h3><p class="muted">আইডি নম্বরটি সঠিক কি না দেখুন অথবা SAMAS কর্তৃপক্ষের সঙ্গে যোগাযোগ করুন।</p>';return;}
+ const active=(m.status||'').toLowerCase()==='active';
+ const safe=s=>String(s??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ result.innerHTML=`<span class="status ${active?'active':'inactive'}">${active?'সক্রিয় সদস্য':'সদস্যপদ সক্রিয় নয়'}</span>
+ <dl><dt>সদস্যের নাম</dt><dd>${safe(m.name)}</dd><dt>Member ID</dt><dd>${safe(id.trim().toUpperCase())}</dd>
+ <dt>সদস্যের ধরন</dt><dd>${safe(m.type)}</dd><dt>যোগদানের তারিখ</dt><dd>${safe(m.joined)}</dd>
+ <dt>অবস্থা</dt><dd>${active?'Active':'Inactive / Suspended'}</dd></dl>`;
+}
+document.getElementById('form').addEventListener('submit',e=>{e.preventDefault();verify(input.value);});
+if(fromQR){input.value=fromQR;setTimeout(()=>verify(fromQR),300);}
+</script>
+</body></html>
